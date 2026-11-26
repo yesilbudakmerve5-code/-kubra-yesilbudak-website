@@ -15,6 +15,7 @@ import {
   GraduationCap, 
   Lightbulb
 } from 'lucide-react';
+import { SEO } from '../components/common/SEO';
 
 export const Tutoring: React.FC = () => {
   const shouldReduceMotion = useReducedMotion();
@@ -147,6 +148,10 @@ export const Tutoring: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-cream">
+      <SEO 
+        title="Kübra Yeşilbudak Yılmaz – Özel Ders" 
+        description="5, 6, 7 ve 8. sınıf öğrencilerine yönelik ilköğretim matematik eğitimi ve LGS hazırlık çalışmaları." 
+      />
       {/* 1. GİRİŞ (HERO / INTRO) */}
       <section className="relative overflow-hidden border-b border-sageGreen/25 bg-gradient-to-b from-cream-100 via-cream-50 to-cream py-14 sm:py-18 lg:py-20">
         {/* Subtle Geometric SVG Pattern Accent */}

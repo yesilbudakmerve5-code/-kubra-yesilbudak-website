@@ -7,10 +7,10 @@ import {
   Target, 
   Send, 
   AlertCircle, 
-  Info, 
-  ShieldCheck, 
+  CheckCircle2,
   Sparkles,
-  Compass
+  Compass,
+  Loader2
 } from 'lucide-react';
 import { SEO } from '../components/common/SEO';
 import { PageHeader } from '../components/common/PageHeader';
@@ -25,7 +25,12 @@ export const Contact: React.FC = () => {
     email: '',
     subject: 'Matematik Özel Ders',
     message: '',
+    gotcha: '',
   });
+
+  // Submit status state
+  const [status, setStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
+  const [errorMessage, setErrorMessage] = useState('');
 
   // Validation State
   const [errors, setErrors] = useState<{
@@ -92,7 +97,42 @@ export const Contact: React.FC = () => {
     setTouched({ name: true, email: true, message: true });
     setErrors({ name: nameErr, email: emailErr, message: messageErr });
 
-    // Since sending service is not active yet on static host, do not submit or pretend it was sent.
+    if (nameErr || emailErr || messageErr) {
+      return;
+    }
+
+    setStatus('sending');
+    setErrorMessage('');
+
+    fetch('https://formspree.io/f/xyewokar', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      },
+      body: JSON.stringify({
+        name: formData.name,
+        email: formData.email,
+        subject: formData.subject,
+        message: formData.message,
+        _gotcha: formData.gotcha,
+      }),
+    })
+      .then(async (res) => {
+        if (res.ok) {
+          setStatus('success');
+          setFormData({ name: '', email: '', subject: 'Matematik Özel Ders', message: '', gotcha: '' });
+          setTouched({});
+          setErrors({});
+        } else {
+          const data = await res.json().catch(() => ({}));
+          throw new Error(data.error || 'Mesaj iletilemedi.');
+        }
+      })
+      .catch(() => {
+        setStatus('error');
+        setErrorMessage('Mesajınız iletilirken bir hata oluştu. Lütfen bağlantınızı kontrol edip daha sonra tekrar deneyiniz.');
+      });
   };
 
   return (
@@ -107,14 +147,6 @@ export const Contact: React.FC = () => {
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14 lg:py-16 space-y-12 sm:space-y-16">
         
-        {/* Güvenlik & Gizlilik Bildirisi */}
-        <div className="bg-cream-100 rounded-2xl p-5 border border-sageGreen/30 flex items-start gap-3.5 shadow-2xs">
-          <ShieldCheck className="w-5 h-5 text-gold-dark shrink-0 mt-0.5" />
-          <div className="text-xs sm:text-sm text-darkGreen/80 leading-relaxed font-sans">
-            <strong>Gizlilik ve Doğruluk:</strong> Paylaşılan tüm veriler yalnızca ders süreçlerinin planlanması ve veli bilgilendirmesi amacıyla korunmaktadır. Doğrulanmamış telefon veya üçüncü şahıs bağlantılarına yer verilmemektedir.
-          </div>
-        </div>
-
         {/* 2 SÜTUNLU DÜZEN: Sol (Bilgiler) & Sağ (Form) */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-start">
           
@@ -187,11 +219,6 @@ export const Contact: React.FC = () => {
 
             </div>
 
-            {/* Doğrulanmamış Bilgi Uyarısı */}
-            <div className="pt-3 border-t border-cream/15 text-xs text-cream-200/70 leading-relaxed font-sans">
-              <span className="block text-gold-light font-medium mb-1">Şeffaf Bilgilendirme</span>
-              Resmi doğrudan iletişim kanalları kurumsal doğrulama tamamlandıkça bu alanda yayınlanacaktır. Bilgi talepleriniz için formu kullanabilirsiniz.
-            </div>
           </motion.div>
 
           {/* 3. İLETİŞİM FORMU (Sağ Kolon) */}
@@ -216,6 +243,16 @@ export const Contact: React.FC = () => {
             </div>
 
             <form onSubmit={handleSubmit} noValidate className="space-y-4 sm:space-y-5">
+              {/* Honeypot spam koruması (Kullanıcıya görünmez) */}
+              <input 
+                type="text" 
+                name="_gotcha" 
+                value={formData.gotcha}
+                onChange={(e) => setFormData(prev => ({ ...prev, gotcha: e.target.value }))}
+                style={{ display: "none" }} 
+                tabIndex={-1} 
+                autoComplete="off" 
+              />
               
               {/* Ad Soyad */}
               <div>
@@ -335,24 +372,49 @@ export const Contact: React.FC = () => {
                 )}
               </div>
 
-              {/* Teknik Kural: Gönderim Durumu & Bilgilendirme */}
-              <div className="pt-2 space-y-3">
-                <div className="p-3.5 rounded-xl bg-gold/15 border border-gold/35 text-xs text-darkGreen/85 flex items-start gap-2.5">
-                  <Info className="w-4 h-4 text-gold-dark shrink-0 mt-0.5" />
-                  <span>
-                    <strong>İletişim formu yakında aktif olacaktır.</strong> Statik altyapıya güvenli mesaj iletim servisi entegre edilmektedir.
-                  </span>
-                </div>
+              {/* Kişisel Veri & Altyapı Bilgilendirmesi */}
+              <p className="text-[11px] text-darkGreen/65 leading-relaxed">
+                İlettiğiniz bilgiler yalnızca iletişim ve eğitim danışmanlığı talebinize yanıt vermek amacıyla Formspree altyapısı üzerinden güvenle işlenmektedir.
+              </p>
 
-                {/* Devre Dışı Bırakılmış Buton (Sahte gönderim yapılmaz) */}
+              {/* Bildirimler ve Gönder Butonu */}
+              <div className="pt-2 space-y-3">
+                {status === 'success' && (
+                  <div className="p-4 rounded-xl bg-sageGreen/20 border border-sageGreen/50 text-darkGreen flex items-start gap-3">
+                    <CheckCircle2 className="w-5 h-5 text-darkGreen shrink-0 mt-0.5" />
+                    <div className="text-sm">
+                      <p className="font-semibold">Mesajınız başarıyla gönderildi.</p>
+                      <p className="text-xs text-darkGreen/85 mt-0.5">En kısa sürede sizinle iletişime geçilecektir.</p>
+                    </div>
+                  </div>
+                )}
+
+                {status === 'error' && (
+                  <div className="p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 flex items-start gap-3">
+                    <AlertCircle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
+                    <div className="text-sm">
+                      <p className="font-semibold">Mesaj gönderilemedi.</p>
+                      <p className="text-xs text-red-600/90 mt-0.5">{errorMessage || 'Lütfen bilgilerinizi kontrol edip tekrar deneyiniz.'}</p>
+                    </div>
+                  </div>
+                )}
+
                 <button
                   type="submit"
-                  disabled
-                  aria-disabled="true"
-                  className="w-full inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl bg-darkGreen/50 text-cream/70 font-medium text-sm cursor-not-allowed border border-darkGreen/20 shadow-none transition-colors"
+                  disabled={status === 'sending'}
+                  className="w-full inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl bg-darkGreen text-cream font-medium text-sm hover:bg-darkGreen/90 active:scale-[0.99] transition-all disabled:opacity-60 disabled:cursor-not-allowed shadow-md hover:shadow-lg"
                 >
-                  <Send className="w-4 h-4 text-gold-light/60" />
-                  <span>Mesaj Gönder (Yakında Aktif)</span>
+                  {status === 'sending' ? (
+                    <>
+                      <Loader2 className="w-4 h-4 text-gold-light animate-spin" />
+                      <span>Gönderiliyor...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Send className="w-4 h-4 text-gold-light" />
+                      <span>Mesaj Gönder</span>
+                    </>
+                  )}
                 </button>
               </div>
 

@@ -25,7 +25,7 @@ export const Home: React.FC = () => {
 
       {/* Hero Section */}
       <section className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-16 flex flex-col justify-center">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-y-8 gap-x-10 items-center justify-items-center">
           
           {/* Left Text / Info Content */}
           <motion.div 
@@ -104,7 +104,7 @@ export const Home: React.FC = () => {
             transition={{ duration: 0.7, delay: 0.15, ease: 'easeOut' }}
           >
             <div className="w-full max-w-xs">
-              <PhotoPlaceholder />
+              <PhotoPlaceholder className="w-full max-w-[420px] mx-auto rounded-lg object-cover" />
             </div>
           </motion.div>
 

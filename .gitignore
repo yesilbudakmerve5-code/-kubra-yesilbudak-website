@@ -29,3 +29,9 @@ node_modules_old/
 audit-*.json
 audit-*.log
 
+# Sensitive environment files
+.env
+.env.*
+!.env.example
+
+
